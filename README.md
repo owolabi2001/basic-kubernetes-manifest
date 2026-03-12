@@ -24,11 +24,30 @@ This folder contains Kubernetes manifests to deploy the **Library app** containe
 
 - **`secrets.yaml`**: Creates `Secret` `libary-secrets` with `stringData` values (Kubernetes base64-encodes them at rest).
 
+- **`kind-config.yaml`**: kind cluster configuration for local testing.
+  - Labels the control-plane node with `ingress-ready=true` (commonly used by Ingress controller installs on kind).
+  - Maps kind node ports `80` and `443` to your machine’s `80` and `443`, so you can reach Ingress via `http://localhost` / `https://localhost`.
+
 ## Prerequisites
 
 - A Kubernetes cluster and `kubectl` configured
 - The `libary-prod` namespace must exist (this repo does not include a Namespace manifest)
 - An Ingress controller installed (e.g. NGINX Ingress) for `Ingress` to work
+
+## Local cluster with kind (recommended)
+
+Create a kind cluster using the provided config:
+
+```bash
+kind create cluster --name libary --config kind-config.yaml
+```
+
+Install an Ingress controller (example: ingress-nginx for kind):
+
+```bash
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
+kubectl -n ingress-nginx wait --for=condition=Available deploy/ingress-nginx-controller --timeout=180s
+```
 
 ## Deploy
 
@@ -53,17 +72,21 @@ Check status:
 ```bash
 kubectl -n libary-prod get deploy,po,svc,ingress
 kubectl -n libary-prod describe ingress libary-ingress
+kubectl rollout status deployment/libary-app -n libary-prod
 ```
 
 ## Access the app (Ingress)
 
-The Ingress uses host **`libary.local`**. If you’re running locally (e.g. Docker Desktop Kubernetes, kind, minikube), map the Ingress controller IP to that host in `/etc/hosts`.
+The Ingress uses host **`libary.local`**.
 
-Example (replace `INGRESS_IP` with your controller’s address):
+- If you’re using **kind + `kind-config.yaml`**, ports `80/443` are mapped to your machine, so you can point `libary.local` to `127.0.0.1`.
+- Otherwise (other clusters), map `libary.local` to your Ingress controller / LoadBalancer IP.
+
+Example `/etc/hosts` entry:
 
 ```bash
-kubectl -n ingress-nginx get svc
-# then add: INGRESS_IP  libary.local
+# kind (with this repo’s kind-config.yaml)
+127.0.0.1 libary.local
 ```
 
 Then browse:
