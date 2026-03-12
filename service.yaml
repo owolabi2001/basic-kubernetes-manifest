@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: libary-service
+  namespace: libary-prod
+spec:
+  selector:
+    app: library-app
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 3000
+  type: ClusterIP
