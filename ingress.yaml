@@ -3,9 +3,8 @@ kind: Ingress
 metadata:
   name: libary-ingress
   namespace: libary-prod
-  annotations:
-    kubernetes.io/ingress.class: "nginx" # ← add this
 spec:
+  ingressClassName: nginx # ← Added here instead
   rules:
     - host: libary.local
       http:
